@@ -1,3 +1,4 @@
+use std::collections::hash_map::Values;
 use std::str::FromStr;
 
 use strum_macros::EnumIter;
@@ -56,35 +57,46 @@ fn string_to_colors(str: &str, conf: &Params) -> Vec<Color> {
     colors
 }
 
-fn int_to_colors(val: i32, conf: &Params) -> Vec<Color> {
-    let mut val = val;
-    let mut colors: Vec<Color> = Vec::new();
-    let is_small=val > SMALL_NUMBER;
-    if is_small || val == 0 {
-        colors.push(Color::from('\0'));
+fn color_contains(k: Color, values: Values<Instruction, Color>) -> bool {
+    for v in values {
+        if *v == k {
+            return true;
+        }
     }
+    return false;
+}
+
+fn generate_exact_color(val:i32, conf: &Params) -> Color {
     let cc = conf.custom_colors.values();
-    while val != 0 {
-        let c = loop {
-            let mut contains = false;
-            let k = Color::random(val);
-            for v in cc.clone() {
-                if *v == k {
-                    contains = true;
-                    break;
-                }
-            }
-            if contains || (val <= SMALL_NUMBER && val != k.sum()) {
-                continue;
-            }
-            break k;
-        };
-        colors.push(c);
-        if is_small {
+    loop {
+        let k = Color::random(val);
+        let contains = color_contains(k, cc.clone());
+        if !contains || val == k.sum() {
+            return k;
+        }
+    };
+}
+
+
+
+fn int_to_colors(val_original: i32, conf: &Params) -> Vec<Color> {
+    if val_original < SMALL_NUMBER{
+        return vec![generate_exact_color(val_original,conf)];
+    }
+    let mut val = val_original;
+    let mut colors: Vec<Color> = Vec::new();
+    while val > SMALL_NUMBER {
+        let sqrt=num_integer::sqrt(val);
+        colors.extend(int_to_colors(sqrt,conf));
+        colors.push(conf.get_color(Instruction::Dup)[0]);
+        colors.push(conf.get_color(Instruction::Mul)[0]);
+        if val!=val_original {
             colors.push(conf.get_color(Instruction::Sum)[0]);
         }
-        val -= c.sum();
+        val-=sqrt*sqrt;
     }
+    colors.push(generate_exact_color(val,conf));
+    colors.push(conf.get_color(Instruction::Sum)[0]);
     colors
 }
 

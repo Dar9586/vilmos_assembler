@@ -4,7 +4,7 @@ use rand::random;
 pub struct Color {
     r: u8,
     g: u8,
-    pub(crate) b: u8,
+    b: u8,
 }
 
 impl From<u32> for Color {
@@ -19,10 +19,12 @@ impl From<u32> for Color {
 
 impl Color {
     pub fn random(max_value: i32) -> Self {
-        let max_value = max_value + 1;
+        let mut max_value = max_value + 1;
         let r = random::<u8>() as i32 % max_value;
-        let g = if max_value - r == 0 { 0 } else { random::<u8>() as i32 % (max_value - r) };
-        let b = if max_value - r - g == 0 { 0 } else { random::<u8>() as i32 % (max_value - r - g) };
+        max_value -= r;
+        let g = if max_value == 0 { 0 } else { random::<u8>() as i32 % max_value };
+        max_value -= g;
+        let b = if max_value - 1 <= u8::MAX as i32 { max_value - 1 } else { random::<u8>() as i32 % max_value };
         Color { r: r as u8, g: g as u8, b: b as u8 }
     }
     pub fn sum(&self) -> i32 {
