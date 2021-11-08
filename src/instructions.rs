@@ -59,7 +59,8 @@ fn string_to_colors(str: &str, conf: &Params) -> Vec<Color> {
 fn int_to_colors(val: i32, conf: &Params) -> Vec<Color> {
     let mut val = val;
     let mut colors: Vec<Color> = Vec::new();
-    if val > SMALL_NUMBER || val == 0 {
+    let is_small=val > SMALL_NUMBER;
+    if is_small || val == 0 {
         colors.push(Color::from('\0'));
     }
     let cc = conf.custom_colors.values();
@@ -78,9 +79,10 @@ fn int_to_colors(val: i32, conf: &Params) -> Vec<Color> {
             }
             break k;
         };
-        assert_eq!(c.b, 0);
         colors.push(c);
-        colors.push(conf.get_color(Instruction::Sum)[0]);
+        if is_small {
+            colors.push(conf.get_color(Instruction::Sum)[0]);
+        }
         val -= c.sum();
     }
     colors
