@@ -16,7 +16,7 @@ pub fn parse(conf: &Params) -> Vec<Color> {
     let mut line = String::new();
     let mut colors: Vec<Color> = Vec::new();
     while reader.read_line(&mut line).unwrap() > 0 {
-        line.pop();
+        line= line.trim().parse().unwrap();
         let y = Instruction::from_command(&line).expect("Invalid input file ");
         match y {
             None => {}

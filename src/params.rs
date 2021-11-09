@@ -40,7 +40,6 @@ impl Params {
         let mut reader = BufReader::new(file);
         let mut line = String::new();
         while reader.read_line(&mut line).unwrap() > 0 {
-            line.pop();
             let x = line.trim();
             if x.len() == 0 {
                 continue;
