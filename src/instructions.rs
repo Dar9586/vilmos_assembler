@@ -9,7 +9,7 @@ use crate::instructions::Instruction::RawString;
 use crate::params::Params;
 use crate::parser;
 
-const SMALL_NUMBER: i32 = 350;
+const SMALL_NUMBER: i32 = 0xfe + 0xff + 0xff;
 
 #[derive(Clone, Debug, EnumIter, EnumString, Hash, Eq, PartialEq)]
 pub enum Instruction {
@@ -58,20 +58,21 @@ fn string_to_colors(str: &str, conf: &Params) -> Vec<Color> {
 }
 
 fn color_contains(k: Color, values: Values<Instruction, Color>) -> bool {
+
     for v in values {
-        if *v == k {
+        if k.eq(v) {
             return true;
         }
     }
     return false;
 }
 
-fn generate_exact_color(val:i32, conf: &Params) -> Color {
+pub fn generate_exact_color(val:i32, conf: &Params) -> Color {
     let cc = conf.custom_colors.values();
     loop {
         let k = Color::random(val);
         let contains = color_contains(k, cc.clone());
-        if !contains || val == k.sum() {
+        if !contains {
             return k;
         }
     };
@@ -80,11 +81,18 @@ fn generate_exact_color(val:i32, conf: &Params) -> Color {
 
 
 fn int_to_colors(val_original: i32, conf: &Params) -> Vec<Color> {
+    let mut colors: Vec<Color> = Vec::new();
+    if val_original<0 {
+        colors.push(generate_exact_color(0,conf));
+        colors.extend(int_to_colors(-val_original,conf));
+        colors.push(conf.get_color(Instruction::Sub)[0]);
+        return colors;
+    }
     if val_original < SMALL_NUMBER{
         return vec![generate_exact_color(val_original,conf)];
     }
     let mut val = val_original;
-    let mut colors: Vec<Color> = Vec::new();
+
     while val > SMALL_NUMBER {
         let sqrt=num_integer::sqrt(val);
         colors.extend(int_to_colors(sqrt,conf));

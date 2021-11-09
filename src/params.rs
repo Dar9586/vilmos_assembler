@@ -26,7 +26,11 @@ impl Params {
     }
     pub fn read_colors(&mut self) {
         for i in Instruction::iter() {
-            self.custom_colors.insert(i.clone(), i.get_default_colors(self)[0]);
+            match i {
+                Instruction::RawInt(_)=>{},
+                Instruction::RawString(_)=>{},
+                _=>{self.custom_colors.insert(i.clone(), i.get_default_colors(self)[0]);}
+            }
         }
         if self.ini_path.is_none() || self.ini_path.as_ref().unwrap().trim().is_empty() {
             return;
