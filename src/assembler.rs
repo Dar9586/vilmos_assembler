@@ -2,13 +2,13 @@ use std::cmp::min;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
+use crate::color;
 
 use crate::color::Color;
 use crate::instructions::Instruction;
 use crate::params::Params;
 
 const MAX_IMAGE_WIDTH: u32 = 1_000_000u32;
-const PNG_COMPONENTS: u32 = 3;
 
 pub fn parse(conf: &Params) -> Vec<Color> {
     let path = &conf.input_path;
@@ -55,7 +55,7 @@ pub fn write_image(conf: &Params, colors: &Vec<Color>) {
     encoder.set_depth(png::BitDepth::Eight);
     let mut writer = encoder.write_header().expect("Unable to write file");
     let mut stream = writer.stream_writer().expect("Unable to write file");
-    let mut buffer: Vec<u8> = Vec::with_capacity((pixel_size * pixel_per_row * PNG_COMPONENTS) as usize);
+    let mut buffer: Vec<u8> = Vec::with_capacity((pixel_size * pixel_per_row * color::COLOR_COMPONENTS as u32) as usize);
     for i in 0..height {
         fill_row(i * pixel_per_row, pixel_per_row, conf, colors, &mut buffer);
         for _ in 0..pixel_size {
