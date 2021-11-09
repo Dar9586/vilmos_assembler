@@ -2,8 +2,8 @@ use std::cmp::min;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
-use crate::color;
 
+use crate::color;
 use crate::color::Color;
 use crate::instructions::Instruction;
 use crate::params::Params;
@@ -28,7 +28,6 @@ pub fn parse(conf: &Params) -> Vec<Color> {
 }
 
 fn fill_row(start_index: u32, count: u32, conf: &Params, colors: &Vec<Color>, buffer: &mut Vec<u8>) {
-    //let mut buffer: Vec<u8> = Vec::with_capacity((conf.pixel_size * count as u16) as usize);
     for i in start_index..start_index + count {
         let color = match colors.get(i as usize) {
             None => conf.get_color(Instruction::Quit)[0],

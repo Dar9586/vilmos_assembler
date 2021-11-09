@@ -1,6 +1,5 @@
 use argparse::{ArgumentParser, Store};
 
-mod reader;
 mod instructions;
 mod color;
 mod params;
