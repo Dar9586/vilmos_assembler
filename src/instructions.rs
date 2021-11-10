@@ -9,7 +9,8 @@ use crate::instructions::Instruction::RawString;
 use crate::params::Params;
 use crate::parser;
 
-const SMALL_NUMBER: i32 = 0xfe + 0xff + 0xff;
+const BIT_PER_COLOR: i32 = 9;
+const BIT_MASK: i32 = (1 << BIT_PER_COLOR) - 1;
 
 #[derive(Clone, Debug, EnumIter, EnumString, Hash, Eq, PartialEq)]
 pub enum Instruction {
@@ -85,36 +86,23 @@ pub fn generate_exact_color(val: i32, conf: &Params) -> Color {
 
 fn int_to_colors(val_original: i32, conf: &Params) -> Vec<Color> {
     let mut colors: Vec<Color> = Vec::new();
-    if val_original == i32::MIN {
-        colors.extend(int_to_colors(-i32::MAX, conf));
-        colors.push(generate_exact_color(1, conf));
-        colors.push(conf.get_color(Instruction::Sub)[0]);
-        return colors;
-    }
-    if val_original < 0 {
-        colors.push(generate_exact_color(0, conf));
-        colors.extend(int_to_colors(-val_original, conf));
-        colors.push(conf.get_color(Instruction::Sub)[0]);
-        return colors;
-    }
-    if val_original <= SMALL_NUMBER {
-        return vec![generate_exact_color(val_original, conf)];
-    }
     let mut val = val_original;
-
-    while val > SMALL_NUMBER {
-        let sqrt = num_integer::sqrt(val);
-        colors.extend(int_to_colors(sqrt, conf));
-        colors.push(conf.get_color(Instruction::Dup)[0]);
-        colors.push(conf.get_color(Instruction::Mul)[0]);
-        if val != val_original {
-            colors.push(conf.get_color(Instruction::Sum)[0]);
+    let mut first = true;
+    for i in (0..32).step_by(BIT_PER_COLOR as usize) {
+        let bits = val & BIT_MASK;
+        if bits != 0 {
+            colors.push(generate_exact_color(bits as i32, conf));
+            if i != 0 {
+                colors.push(generate_exact_color(i, conf));
+                colors.extend(Instruction::Lshift.get_default_colors(conf));
+            }
+            if first {
+                first = false;
+            } else {
+                colors.extend(Instruction::Sum.get_default_colors(conf));
+            }
         }
-        val -= sqrt * sqrt;
-    }
-    if val != 0 {
-        colors.push(generate_exact_color(val, conf));
-        colors.push(conf.get_color(Instruction::Sum)[0]);
+        val >>= BIT_PER_COLOR;
     }
     colors
 }
