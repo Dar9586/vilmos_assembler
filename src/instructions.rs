@@ -90,8 +90,14 @@ fn char_to_colors(ch: char, conf: &Params) -> Vec<Color> {
 fn string_to_colors(str: &str, conf: &Params) -> Vec<Color> {
     let mut colors: Vec<Color> = Vec::new();
     colors.extend(char_to_colors('\0', conf));
+    let mut last_char = '\0';
     for c in str.chars() {
-        colors.extend(char_to_colors(c, conf));
+        if c == last_char {
+            colors.extend(conf.get_color(Instruction::Dup));
+        } else {
+            colors.extend(char_to_colors(c, conf));
+            last_char = c;
+        }
     }
     colors
 }
