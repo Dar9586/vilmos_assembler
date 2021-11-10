@@ -104,6 +104,9 @@ fn int_to_colors(val_original: i32, conf: &Params) -> Vec<Color> {
         }
         val >>= BIT_PER_COLOR;
     }
+    if first{
+        colors.push(generate_exact_color(0, conf));
+    }
     colors
 }
 
