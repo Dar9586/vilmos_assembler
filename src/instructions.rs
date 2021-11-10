@@ -13,8 +13,8 @@ use crate::instructions::Instruction::RawString;
 use crate::params::Params;
 use crate::parser;
 
-const BIT_PER_COLOR: i32 = 9;
-const BIT_MASK: i32 = (1 << BIT_PER_COLOR) - 1;
+const BIT_PER_COLOR: u32 = 9;
+const BIT_MASK: u32 = (1 << BIT_PER_COLOR) - 1;
 
 #[derive(Clone, Debug, EnumIter, EnumString, Hash, Eq, PartialEq, EnumVariantNames, EnumProperty)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
@@ -120,25 +120,32 @@ pub fn generate_exact_color(val: i32, conf: &Params) -> Color {
 
 fn int_to_colors(val_original: i32, conf: &Params) -> Vec<Color> {
     let mut colors: Vec<Color> = Vec::new();
-    let mut val = val_original;
+    let mut val:u32 = val_original as u32;
     let mut first = true;
-    for i in (0..32).step_by(BIT_PER_COLOR as usize) {
-        let bits = val & BIT_MASK;
-        if bits != 0 {
-            colors.push(generate_exact_color(bits as i32, conf));
-            if i != 0 {
-                colors.push(generate_exact_color(i, conf));
-                colors.extend(conf.get_color(Instruction::Lshift));
+    let mut i:u32=0;
+    while val!=0 {
+        if val&1==1 {
+            let bits = val & BIT_MASK;
+            if bits != 0 {
+                colors.push(generate_exact_color(bits as i32, conf));
+                if i != 0 {
+                    colors.push(generate_exact_color(i as i32, conf));
+                    colors.extend(conf.get_color(Instruction::Lshift));
+                }
+                if first {
+                    first = false;
+                } else {
+                    colors.extend(conf.get_color(Instruction::Sum));
+                }
             }
-            if first {
-                first = false;
-            } else {
-                colors.extend(conf.get_color(Instruction::Sum));
-            }
+            val >>= BIT_PER_COLOR;
+            i+=BIT_PER_COLOR;
+        }else{
+            val>>=1;
+            i+=1;
         }
-        val >>= BIT_PER_COLOR;
     }
-    if first{
+    if val_original == 0{
         colors.push(generate_exact_color(0, conf));
     }
     colors

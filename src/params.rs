@@ -28,8 +28,7 @@ impl Params {
     pub fn read_colors(&mut self) {
         for i in Instruction::iter() {
             match i {
-                Instruction::RawInt(_) => {}
-                Instruction::RawString(_) => {}
+                Instruction::RawInt(_) | Instruction::RawString(_) => {}
                 _ => { self.custom_colors.insert(i.clone(), i.get_default_colors(self)[0]); }
             }
         }
@@ -48,7 +47,11 @@ impl Params {
                 continue;
             }
             let command = i.0.as_str().to_uppercase();
+            if command.starts_with("RAW") {
+                panic!("Can't overwrite the RAW_ instruction")
+            }
             let command = Instruction::find_name(command.as_str()).expect("Wrong instruction name in config file");
+
             let mut color_str = i.1.clone().unwrap();
             if color_str.len() == 3 {
                 for i in 0..3 {
