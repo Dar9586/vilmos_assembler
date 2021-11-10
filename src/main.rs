@@ -1,4 +1,4 @@
-use argparse::{ArgumentParser, Store};
+use argparse::{ArgumentParser, Store, StoreTrue};
 
 mod instructions;
 mod color;
@@ -12,6 +12,7 @@ fn main() {
     let mut out_path: String = String::new();
     let mut pixel_size: u16 = 1;
     let mut max_width: i16 = -1;
+    let mut disable_random: bool = false;
 
     {  // this block limits scope of borrows by ap.refer() method
         let mut ap = ArgumentParser::new();
@@ -31,7 +32,9 @@ fn main() {
         ap.refer(&mut max_width)
             .add_option(&["--max-width"], Store,
                         "Max pixels per row [-1 for unlimited]");
-
+        ap.refer(&mut disable_random)
+            .add_option(&["--no-random", "-r"], StoreTrue,
+                        "Disable randomization during generation of raw pixels");
         ap.parse_args_or_exit();
     }
 
@@ -42,6 +45,7 @@ fn main() {
         input_path: in_path,
         output_path: out_path,
         ini_path: Option::from(ini_path.clone()),
+        is_random: !disable_random
     };
     conf.read_colors();
     let colors = assembler::parse(&conf);

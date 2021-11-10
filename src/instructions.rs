@@ -40,6 +40,8 @@ pub enum Instruction {
     WhileEnd,
     FileOpen,
     FileClose,
+    Lshift,
+    RShift,
     RawString(String),
     RawInt(i32),
 }
@@ -67,6 +69,9 @@ fn color_contains(k: Color, values: Values<Instruction, Color>) -> bool {
 }
 
 pub fn generate_exact_color(val: i32, conf: &Params) -> Color {
+    if !conf.is_random {
+        return Color::not_random(val);
+    }
     let cc = conf.custom_colors.values();
     loop {
         let k = Color::random(val);
@@ -92,7 +97,7 @@ fn int_to_colors(val_original: i32, conf: &Params) -> Vec<Color> {
         colors.push(conf.get_color(Instruction::Sub)[0]);
         return colors;
     }
-    if val_original < SMALL_NUMBER {
+    if val_original <= SMALL_NUMBER {
         return vec![generate_exact_color(val_original, conf)];
     }
     let mut val = val_original;
@@ -167,6 +172,8 @@ impl Instruction {
 impl Instruction {
     pub fn get_default_colors(&self, conf: &Params) -> Vec<Color> {
         match self {
+            Instruction::Lshift => vec![Color::from(0x2d6a7d)],
+            Instruction::RShift => vec![Color::from(0x439dba)],
             Instruction::InputInt => vec![Color::from(0xffffff)],
             Instruction::OutputInt => vec![Color::from(0x000001)],
             Instruction::Sum => vec![Color::from(0x00ced1)],

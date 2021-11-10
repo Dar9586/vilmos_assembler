@@ -9,12 +9,13 @@ use crate::color::Color;
 use crate::instructions::Instruction;
 
 pub struct Params {
-    pub(crate) custom_colors: HashMap<Instruction, Color>,
-    pub(crate) pixel_size: u16,
-    pub(crate) input_path: String,
-    pub(crate) output_path: String,
-    pub(crate) ini_path: Option<String>,
-    pub(crate) max_width: i16,
+    pub custom_colors: HashMap<Instruction, Color>,
+    pub pixel_size: u16,
+    pub input_path: String,
+    pub output_path: String,
+    pub ini_path: Option<String>,
+    pub max_width: i16,
+    pub is_random: bool
 }
 
 impl Params {

@@ -1,7 +1,7 @@
 use rand::{random, thread_rng};
 use rand::seq::SliceRandom;
 
-const RANDOM_STEP_INIT: i32 = 25;
+const RANDOM_STEP_INIT: i32 = 26;
 pub const COLOR_COMPONENTS: usize = 3;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -22,6 +22,15 @@ impl From<u32> for Color {
 }
 
 impl Color {
+    pub fn not_random(mut value: i32) -> Self {
+        let r = (u8::MAX as i32).min(value);
+        value -= r;
+        let g = (u8::MAX as i32).min(value);
+        value -= g;
+        let b = (u8::MAX as i32).min(value);
+        Color { r: r as u8, g: g as u8, b: b as u8 }
+    }
+
     pub fn random(value: i32) -> Self {
         let mut components = [0u8; COLOR_COMPONENTS];
         let base: u8 = (value / (RANDOM_STEP_INIT * COLOR_COMPONENTS as i32) * RANDOM_STEP_INIT) as u8;
