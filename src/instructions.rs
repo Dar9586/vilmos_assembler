@@ -1,8 +1,12 @@
 use std::collections::hash_map::Values;
-use std::str::FromStr;
 
+use strum::EnumProperty;
+use strum::IntoEnumIterator;
+use strum::VariantNames;
 use strum_macros::EnumIter;
+use strum_macros::EnumProperty;
 use strum_macros::EnumString;
+use strum_macros::EnumVariantNames;
 
 use crate::color::Color;
 use crate::instructions::Instruction::RawString;
@@ -12,37 +16,67 @@ use crate::parser;
 const BIT_PER_COLOR: i32 = 9;
 const BIT_MASK: i32 = (1 << BIT_PER_COLOR) - 1;
 
-#[derive(Clone, Debug, EnumIter, EnumString, Hash, Eq, PartialEq)]
+#[derive(Clone, Debug, EnumIter, EnumString, Hash, Eq, PartialEq, EnumVariantNames, EnumProperty)]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum Instruction {
-    InputInt,
-    OutputInt,
-    Sum,
-    Sub,
-    Div,
-    Mul,
-    Mod,
-    Rnd,
-    And,
-    Or,
-    Xor,
-    Nand,
-    Not,
-    InputAscii,
-    OutputAscii,
-    Pop,
-    Swap,
-    Cycle,
-    Rcycle,
-    Dup,
-    Reverse,
-    Quit,
-    Output,
-    While,
-    WhileEnd,
-    FileOpen,
-    FileClose,
+    #[strum(props(Color = "2d6a7d"))]
     Lshift,
+    #[strum(props(Color = "439dba"))]
     RShift,
+    #[strum(props(Color = "ffffff"))]
+    InputInt,
+    #[strum(props(Color = "000001"))]
+    OutputInt,
+    #[strum(props(Color = "00ced1"))]
+    Sum,
+    #[strum(props(Color = "ffa500"))]
+    Sub,
+    #[strum(props(Color = "8a2be2"))]
+    Div,
+    #[strum(props(Color = "8b0000"))]
+    Mul,
+    #[strum(props(Color = "ffdab9"))]
+    Mod,
+    #[strum(props(Color = "008000"))]
+    Rnd,
+    #[strum(props(Color = "ecf3dc"))]
+    And,
+    #[strum(props(Color = "b7c6e6"))]
+    Or,
+    #[strum(props(Color = "f5e3d7"))]
+    Xor,
+    #[strum(props(Color = "e1d3ef"))]
+    Nand,
+    #[strum(props(Color = "ff9aa2"))]
+    Not,
+    #[strum(props(Color = "e3e3e3"))]
+    InputAscii,
+    #[strum(props(Color = "4b4b4b"))]
+    OutputAscii,
+    #[strum(props(Color = "cc9e06"))]
+    Pop,
+    #[strum(props(Color = "ffbd4a"))]
+    Swap,
+    #[strum(props(Color = "e37f9d"))]
+    Cycle,
+    #[strum(props(Color = "e994ae"))]
+    Rcycle,
+    #[strum(props(Color = "006994"))]
+    Dup,
+    #[strum(props(Color = "a5a58d"))]
+    Reverse,
+    #[strum(props(Color = "b7e4c7"))]
+    Quit,
+    #[strum(props(Color = "9B2242"))]
+    Output,
+    #[strum(props(Color = "2e1a47"))]
+    While,
+    #[strum(props(Color = "68478d"))]
+    WhileEnd,
+    #[strum(props(Color = "91f68b"))]
+    FileOpen,
+    #[strum(props(Color = "2fed23"))]
+    FileClose,
     RawString(String),
     RawInt(i32),
 }
@@ -94,12 +128,12 @@ fn int_to_colors(val_original: i32, conf: &Params) -> Vec<Color> {
             colors.push(generate_exact_color(bits as i32, conf));
             if i != 0 {
                 colors.push(generate_exact_color(i, conf));
-                colors.extend(Instruction::Lshift.get_default_colors(conf));
+                colors.extend(conf.get_color(Instruction::Lshift));
             }
             if first {
                 first = false;
             } else {
-                colors.extend(Instruction::Sum.get_default_colors(conf));
+                colors.extend(conf.get_color(Instruction::Sum));
             }
         }
         val >>= BIT_PER_COLOR;
@@ -110,19 +144,16 @@ fn int_to_colors(val_original: i32, conf: &Params) -> Vec<Color> {
     colors
 }
 
-pub fn get_instruction_name(val: &str) -> String {
-    let mut instr_name = String::new();
-    for i in val.splitn(2, "_") {
-        let mut chars = i.chars();
-        instr_name.push(chars.next().unwrap().to_ascii_uppercase());
-        for c in chars {
-            instr_name.push(c.to_ascii_lowercase());
-        }
-    }
-    instr_name
-}
-
 impl Instruction {
+    pub fn find_name(name: &str) -> Option<Instruction> {
+        let index = Instruction::VARIANTS.iter().position(|&r| r == name);
+        if index.is_none() {
+            return None;
+        }
+        let index = index.unwrap();
+        let instruction: Instruction = Instruction::iter().nth(index).unwrap();
+        Some(instruction)
+    }
     pub fn from_command(command: &str) -> Result<Option<Instruction>, &'static str> {
         let tokens = parser::parse(command);
         if tokens.len() == 0 {
@@ -131,13 +162,18 @@ impl Instruction {
         if tokens.len() > 2 {
             return Err("Too many operands");
         }
-        let instruction = Instruction::from_str(&get_instruction_name(&tokens[0]));
-        if instruction.is_err() {
-            return Err("Invalid instruction name");
+        let name = tokens[0].as_str();
+        let instruction = Instruction::find_name(name);
+        if instruction.is_none() {
+            return Err("Instruction not found");
         }
-        let instruction: Instruction = instruction.unwrap();
+        let instruction = instruction.unwrap();
         if tokens.len() == 1 {
-            return Ok(Some(instruction));
+            return match instruction {
+                Instruction::RawString(_) => Err("RAW_STRING needs an argument"),
+                Instruction::RawInt(_) => Err("RAW_INT needs an argument"),
+                _ => Ok(Some(instruction))
+            }
         }
         return match instruction {
             Instruction::RawInt(_) => {
@@ -162,38 +198,14 @@ impl Instruction {
 
 impl Instruction {
     pub fn get_default_colors(&self, conf: &Params) -> Vec<Color> {
+
         match self {
-            Instruction::Lshift => vec![Color::from(0x2d6a7d)],
-            Instruction::RShift => vec![Color::from(0x439dba)],
-            Instruction::InputInt => vec![Color::from(0xffffff)],
-            Instruction::OutputInt => vec![Color::from(0x000001)],
-            Instruction::Sum => vec![Color::from(0x00ced1)],
-            Instruction::Sub => vec![Color::from(0xffa500)],
-            Instruction::Div => vec![Color::from(0x8a2be2)],
-            Instruction::Mul => vec![Color::from(0x8b0000)],
-            Instruction::Mod => vec![Color::from(0xffdab9)],
-            Instruction::Rnd => vec![Color::from(0x008000)],
-            Instruction::And => vec![Color::from(0xecf3dc)],
-            Instruction::Or => vec![Color::from(0xb7c6e6)],
-            Instruction::Xor => vec![Color::from(0xf5e3d7)],
-            Instruction::Nand => vec![Color::from(0xe1d3ef)],
-            Instruction::Not => vec![Color::from(0xff9aa2)],
-            Instruction::InputAscii => vec![Color::from(0xe3e3e3)],
-            Instruction::OutputAscii => vec![Color::from(0x4b4b4b)],
-            Instruction::Pop => vec![Color::from(0xcc9e06)],
-            Instruction::Swap => vec![Color::from(0xffbd4a)],
-            Instruction::Cycle => vec![Color::from(0xe37f9d)],
-            Instruction::Rcycle => vec![Color::from(0xe994ae)],
-            Instruction::Dup => vec![Color::from(0x006994)],
-            Instruction::Reverse => vec![Color::from(0xa5a58d)],
-            Instruction::Quit => vec![Color::from(0xb7e4c7)],
-            Instruction::Output => vec![Color::from(0x9B2242)],
-            Instruction::While => vec![Color::from(0x2e1a47)],
-            Instruction::WhileEnd => vec![Color::from(0x68478d)],
-            Instruction::FileOpen => vec![Color::from(0x91f68b)],
-            Instruction::FileClose => vec![Color::from(0x2fed23)],
             Instruction::RawString(str) => string_to_colors(&str, conf),
             Instruction::RawInt(val) => int_to_colors(*val, conf),
+            _ => {
+                let val = u32::from_str_radix(self.get_str("Color").unwrap(), 16);
+                vec![Color::from(val.unwrap())]
+            }
         }
     }
 }

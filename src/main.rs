@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate ini;
+
 use argparse::{ArgumentParser, Store, StoreTrue};
 
 mod instructions;

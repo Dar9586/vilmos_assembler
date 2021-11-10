@@ -33,27 +33,30 @@ impl Params {
                 _ => { self.custom_colors.insert(i.clone(), i.get_default_colors(self)[0]); }
             }
         }
-        if self.ini_path.is_none() || self.ini_path.as_ref().unwrap().trim().is_empty() {
+        if self.ini_path.is_none() {
             return;
         }
-        let path = Path::new(self.ini_path.as_ref().unwrap());
-        let file = File::open(path).expect("Unable to open ini file");
-        let mut reader = BufReader::new(file);
-        let mut line = String::new();
-        while reader.read_line(&mut line).unwrap() > 0 {
-            let x = line.trim();
-            if x.len() == 0 {
+        let name = self.ini_path.as_ref().unwrap().trim();
+
+        let map = ini!(name);
+        if map.get("colors").is_none() {
+            return;
+        }
+        let color_section = map.get("colors").unwrap();
+        for i in color_section {
+            if i.1.is_none() || i.1.as_ref().unwrap().is_empty() {
                 continue;
             }
-            let mut iter = x.splitn(2, "=");
-            let name = iter.next().expect("Invalid INI file").trim();
-            let mut value = iter.next().expect("Invalid INI file").trim();
-            if value.starts_with("#") {
-                value = &value[1..];
+            let command = i.0.as_str().to_uppercase();
+            let command = Instruction::find_name(command.as_str()).expect("Wrong instruction name in config file");
+            let mut color_str = i.1.clone().unwrap();
+            if color_str.len() == 3 {
+                for i in 0..3 {
+                    color_str.insert(i * 2, color_str.chars().nth(i * 2).unwrap());
+                }
             }
-            let instruction = Instruction::from_command(name).expect("Invalid INI file").expect("Invalid INI file");
-            self.custom_colors.insert(instruction, Color::from(u32::from_str_radix(value, 16).expect("Invalid INI file")));
-            line.clear();
+            let hex_code = u32::from_str_radix(color_str.as_str(), 16).expect("Invalid value for config file");
+            self.custom_colors.insert(command, Color::from(hex_code));
         }
     }
 }
