@@ -80,8 +80,12 @@ pub enum Instruction {
     FileOpen,
     #[strum(props(Color = "2fed23"))]
     FileClose,
+    #[strum(props(Params = "1"))]
     RawString(String),
+    #[strum(props(Params = "1"))]
     RawInt(i32),
+    #[strum(props(Params = "3"))]
+    RawColor(u8, u8, u8),
 }
 
 fn char_to_colors(ch: char, conf: &Params) -> Vec<Color> {
@@ -191,23 +195,19 @@ impl Instruction {
         if tokens.len() == 0 {
             return Ok(None);
         }
-        if tokens.len() > 2 {
-            return Err("Too many operands");
-        }
         let name = tokens[0].as_str();
         let instruction = Instruction::find_name(name);
         if instruction.is_none() {
             return Err("Instruction not found");
         }
         let instruction = instruction.unwrap();
-        if tokens.len() == 1 {
-            return match instruction {
-                Instruction::RawString(_) => Err("RAW_STRING needs an argument"),
-                Instruction::RawInt(_) => Err("RAW_INT needs an argument"),
-                _ => Ok(Some(instruction))
-            }
+        if tokens.len() - 1 != instruction.get_param_count() as usize {
+            return Err("Wrong number of arguments");
         }
         return match instruction {
+            Instruction::RawString(_) => {
+                Ok(Some(RawString(tokens[1].clone())))
+            },
             Instruction::RawInt(_) => {
                 match tokens[1].parse::<i32>() {
                     Ok(val) => {
@@ -217,14 +217,18 @@ impl Instruction {
                         Err("The argument is not a valid integer")
                     }
                 }
-            }
-            Instruction::RawString(_) => {
-                Ok(Some(RawString(tokens[1].clone())))
-            }
-            _ => {
-                Err("Too many operands")
-            }
-        };
+            },
+            Instruction::RawColor(_, _, _) => {
+                let r = tokens[1].parse::<u8>();
+                let g = tokens[2].parse::<u8>();
+                let b = tokens[3].parse::<u8>();
+                if r.is_err() || g.is_err() || b.is_err() {
+                    return Err("The argument is not a valid integer");
+                }
+                Ok(Some(Instruction::RawColor(r.unwrap(), g.unwrap(), b.unwrap())))
+            },
+            _ => Ok(Some(instruction))
+        }
     }
 }
 
@@ -233,10 +237,18 @@ impl Instruction {
         match self {
             Instruction::RawString(str) => string_to_colors(&str, conf),
             Instruction::RawInt(val) => int_to_colors(*val, conf),
+            Instruction::RawColor(r, g, b) => vec![Color::new(*r, *g, *b)],
             _ => {
                 let val = u32::from_str_radix(self.get_str("Color").unwrap(), 16);
                 vec![Color::from(val.unwrap())]
             }
+        }
+    }
+    pub fn get_param_count(&self) -> u8 {
+        let x: Option<&str> = self.get_str("Params");
+        match x {
+            None => 0,
+            Some(val) => val.parse::<u8>().unwrap()
         }
     }
 }
