@@ -1,7 +1,6 @@
 use rand::{random, thread_rng};
 use rand::seq::SliceRandom;
 
-const RANDOM_STEP_INIT: i32 = 26;
 pub const COLOR_COMPONENTS: usize = 3;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
