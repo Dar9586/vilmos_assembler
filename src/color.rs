@@ -21,6 +21,10 @@ impl From<u32> for Color {
 }
 
 impl Color {
+    pub fn new(r: u8, g: u8, b: u8) -> Self {
+        Color { r, g, b }
+    }
+
     pub fn not_random(mut value: i32) -> Self {
         let r = (u8::MAX as i32).min(value);
         value -= r;
