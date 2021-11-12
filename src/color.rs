@@ -31,23 +31,23 @@ impl Color {
         Color { r: r as u8, g: g as u8, b: b as u8 }
     }
 
+
     pub fn random(value: i32) -> Self {
         let mut components = [0u8; COLOR_COMPONENTS];
-        let base: u8 = (value / (RANDOM_STEP_INIT * COLOR_COMPONENTS as i32) * RANDOM_STEP_INIT) as u8;
-        components.fill(base as u8);
-        let mut max_value = value - (base as i32 * COLOR_COMPONENTS as i32);
-        while max_value != 0 {
-            let i = random::<u8>() % COLOR_COMPONENTS as u8;
-            let val = (1.max(random::<u8>() as i32 % max_value)) as u8;
-            match components[i as usize].checked_add(val) {
-                None => {}
-                Some(v) => {
-                    components[i as usize] = v;
-                    max_value -= val as i32;
+        let mut value = value;
+        while value != 0 {
+            let min = *components.iter().min().unwrap() as i32;
+            let i = 1 + (random::<u8>() as i32 % value.min(255 - min)) as u8;
+            for item in 0..3 {
+                if let Some(new_val) = components[item].checked_add(i) {
+                    components[item] = new_val;
+                    break;
                 }
             }
+            components.shuffle(&mut thread_rng());
+            value -= i as i32;
         }
-        components.shuffle(&mut thread_rng());
+
         Color { r: components[0], g: components[1], b: components[2] }
     }
 }

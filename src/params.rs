@@ -36,7 +36,9 @@ impl Params {
             return;
         }
         let name = self.ini_path.as_ref().unwrap().trim();
-
+        if name.is_empty() {
+            return;
+        }
         let map = ini!(name);
         if map.get("colors").is_none() {
             return;

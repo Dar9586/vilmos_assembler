@@ -1,5 +1,8 @@
-pub fn escaped(to_escape: char) -> Option<char> {
-    match to_escape {
+pub fn escaped(to_escape: Option<char>) -> Option<char> {
+    if to_escape.is_none() {
+        return None;
+    }
+    match to_escape.unwrap() {
         'n' => Some('\n'),
         'r' => Some('\r'),
         't' => Some('\t'),
@@ -10,39 +13,48 @@ pub fn escaped(to_escape: char) -> Option<char> {
     }
 }
 
-fn consume_str(buffer: &mut String, mut actual_char: char) -> String {
+fn consume_str(buffer: &mut String, mut actual_char: char) -> Option<String> {
     let quoted = actual_char == '"';
     let mut final_string = String::new();
     if quoted {
-        actual_char = buffer.pop().expect("Invalid string");
+        match buffer.pop() {
+            None => { return None; }
+            Some(ch) => { actual_char = ch; }
+        }
     }
 
     loop {
         if actual_char == '\\' {// escape \
-            let to_escape = buffer.pop().expect("Invalid unescape");
-            let escaped = escaped(to_escape).expect("Invalid escaped character");
-            final_string.push(escaped);
+            let to_escape = buffer.pop();
+            let escaped = escaped(to_escape);
+            if escaped.is_none() {
+                return None
+            }
+            final_string.push(escaped.unwrap());
         } else if (quoted && actual_char != '"') || (!quoted && !actual_char.is_whitespace()) { //push other character
             final_string.push(actual_char);
         } else {
-            return final_string;
+            return Some(final_string);
         }
         match buffer.pop() {
-            None => { return final_string; }
+            None => { return Some(final_string); }
             Some(ch) => { actual_char = ch; }
         }
     }
 }
 
-pub fn parse(str: &str) -> Vec<String> {
+pub fn parse(str: &str) -> Option<Vec<String>> {
     let mut str = str.trim_start().chars().rev().collect::<String>();
     let mut tokens: Vec<String> = Vec::new();
     while let Some(actual_char) = str.pop() {
         match actual_char {
-            '#' => return tokens,
-            _ => tokens.push(consume_str(&mut str, actual_char))
+            '#' => break,
+            _ => match consume_str(&mut str, actual_char) {
+                None => return None,
+                Some(str) => tokens.push(str)
+            }
         }
         str = str.trim_end().parse().unwrap();
     }
-    return tokens;
+    return Some(tokens);
 }
