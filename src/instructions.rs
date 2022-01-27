@@ -396,7 +396,7 @@ mod instruction_tests {
         let params = get_default_map();
         for instruction in Instruction::iter() {
             match instruction {
-                Instruction::RawInt(_) | Instruction::RawString(_) => continue,
+                Instruction::RawInt(_) | Instruction::RawString(_) | Instruction::RawColor(_, _, _) => continue,
                 _ => {}
             }
             let inst = instruction.get_default_colors(&params);
